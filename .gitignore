@@ -1,0 +1,13 @@
+# frontend
+devtrack-client/node_modules/
+devtrack-client/dist/
+
+# backend
+DevTrack.Api/bin/
+DevTrack.Api/obj/
+DevTrack.Api/devtrack.db
+
+# misc
+.vscode/
+.env
+.DS_Store
