@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { createProject, getProjects } from "../api/client";
 import type { Project } from "../types";
 
@@ -90,9 +91,10 @@ export default function ProjectsPage() {
                 background: "#fff",
               }}
             >
-              <h3>{project.name}</h3>
+              <h3 style={{ marginTop: 0 }}>{project.name}</h3>
               <p>{project.description || "No description"}</p>
               <p>Tasks: {project.tasks?.length ?? 0}</p>
+              <Link to={`/projects/${project.id}`}>Open project</Link>
             </div>
           ))}
         </div>
