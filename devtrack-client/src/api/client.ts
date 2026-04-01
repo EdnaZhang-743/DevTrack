@@ -64,3 +64,19 @@ export async function updateTaskStatus(
   if (!res.ok) throw new Error("Failed to update task status");
   return res.json();
 }
+
+export async function deleteProject(id: number) {
+  const res = await fetch(`${API_BASE}/projects/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete project");
+}
+
+export async function deleteTask(id: number) {
+  const res = await fetch(`${API_BASE}/tasks/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete task");
+}

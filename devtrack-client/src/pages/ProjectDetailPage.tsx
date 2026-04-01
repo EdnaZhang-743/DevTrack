@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { createTask, getProject, updateTaskStatus } from "../api/client";
+import {
+  createTask,
+  deleteTask,
+  getProject,
+  updateTaskStatus,
+} from "../api/client";
 import type { Project } from "../types";
 
 export default function ProjectDetailPage() {
@@ -63,6 +68,30 @@ export default function ProjectDetailPage() {
     } catch (error) {
       console.error(error);
       alert("Failed to update task status");
+    }
+  }
+ 
+  async function handleDeleteTask(taskId: number) {
+    const confirmed = window.confirm("Are you sure you want to delete this task?");
+    if (!confirmed) return;
+
+    try {
+      await deleteTask(taskId);
+      await loadProject();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete task");
+    }
+  }
+
+  function getStatusStyle(status: string) {
+    switch (status) {
+      case "Done":
+        return { background: "#d1fae5", color: "#065f46" };
+      case "InProgress":
+        return { background: "#dbeafe", color: "#1e40af" };
+      default:
+        return { background: "#f3f4f6", color: "#374151" };
     }
   }
 
@@ -140,21 +169,34 @@ export default function ProjectDetailPage() {
               <h3 style={{ marginTop: 0 }}>{task.title}</h3>
               <p>{task.description || "No description"}</p>
               <p>Priority: {task.priority}</p>
-              <p>Status: {task.status}</p>
+              <p>
+                Status:{" "}
+                <span
+                  style={{
+                    ...getStatusStyle(task.status),
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    display: "inline-block",
+                  }}
+                >
+                  {task.status}
+                </span>
+              </p>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button onClick={() => handleStatusChange(task.id, "Todo")}>
-                  Todo
+                    Todo
                 </button>
-                <button
-                  onClick={() => handleStatusChange(task.id, "InProgress")}
-                >
-                  In Progress
+                <button onClick={() => handleStatusChange(task.id, "InProgress")}>
+                    In Progress
                 </button>
                 <button onClick={() => handleStatusChange(task.id, "Done")}>
-                  Done
+                    Done
                 </button>
-              </div>
+                <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
+                </div>
             </div>
           ))
         )}

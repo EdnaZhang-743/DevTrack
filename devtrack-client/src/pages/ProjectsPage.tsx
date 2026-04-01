@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { createProject, getProjects } from "../api/client";
+import { createProject, deleteProject, getProjects } from "../api/client";
 import type { Project } from "../types";
 
 export default function ProjectsPage() {
@@ -46,6 +46,19 @@ export default function ProjectsPage() {
       alert("Failed to create project");
     }
   }
+
+    async function handleDeleteProject(id: number) {
+    const confirmed = window.confirm("Are you sure you want to delete this project?");
+    if (!confirmed) return;
+
+    try {
+        await deleteProject(id);
+        await loadProjects();
+    } catch (error) {
+        console.error(error);
+        alert("Failed to delete project");
+    }
+    }
 
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
@@ -94,7 +107,10 @@ export default function ProjectsPage() {
               <h3 style={{ marginTop: 0 }}>{project.name}</h3>
               <p>{project.description || "No description"}</p>
               <p>Tasks: {project.tasks?.length ?? 0}</p>
-              <Link to={`/projects/${project.id}`}>Open project</Link>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <Link to={`/projects/${project.id}`}>Open project</Link>
+            <button onClick={() => handleDeleteProject(project.id)}>Delete</button>
+            </div>
             </div>
           ))}
         </div>
