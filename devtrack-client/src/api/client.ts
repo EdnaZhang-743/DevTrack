@@ -2,6 +2,45 @@ import type { Project, TaskItem } from "../types";
 
 const API_BASE = "http://localhost:5000/api";
 
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
+}
+
+export async function register(data: {
+  username: string;
+  email: string;
+  password: string;
+}) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to register");
+  return res.json();
+}
+
+export async function login(data: { email: string; password: string }) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to login");
+  return res.json();
+}
+
 export async function getProjects(): Promise<Project[]> {
   const res = await fetch(`${API_BASE}/projects`);
   if (!res.ok) throw new Error("Failed to fetch projects");
@@ -22,6 +61,7 @@ export async function createProject(data: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(data),
   });

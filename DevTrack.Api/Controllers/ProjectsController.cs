@@ -1,6 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using DevTrack.Api.Data;
 using DevTrack.Api.DTOs.Projects;
 using DevTrack.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,22 +38,31 @@ public class ProjectsController : ControllerBase
             .Include(p => p.Tasks)
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (project == null)
-            return NotFound();
+        if (project == null) return NotFound();
 
         return Ok(project);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<Project>> CreateProject(CreateProjectDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Name))
             return BadRequest("Project name is required.");
 
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var ownerId = int.Parse(userIdClaim);
+
         var project = new Project
         {
             Name = dto.Name.Trim(),
-            Description = dto.Description?.Trim()
+            Description = dto.Description?.Trim(),
+            OwnerId = ownerId
         };
 
         _context.Projects.Add(project);
@@ -63,8 +75,7 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> DeleteProject(int id)
     {
         var project = await _context.Projects.FindAsync(id);
-        if (project == null)
-            return NotFound();
+        if (project == null) return NotFound();
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();

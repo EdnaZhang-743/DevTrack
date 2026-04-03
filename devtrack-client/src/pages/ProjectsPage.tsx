@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createProject, deleteProject, getProjects } from "../api/client";
 import type { Project } from "../types";
 
 export default function ProjectsPage() {
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const username = localStorage.getItem("username");
 
   async function loadProjects() {
     try {
@@ -28,6 +32,12 @@ export default function ProjectsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!username) {
+      alert("Please login first");
+      navigate("/login");
+      return;
+    }
+
     if (!name.trim()) {
       alert("Project name is required");
       return;
@@ -47,23 +57,55 @@ export default function ProjectsPage() {
     }
   }
 
-    async function handleDeleteProject(id: number) {
+  async function handleDeleteProject(id: number) {
     const confirmed = window.confirm("Are you sure you want to delete this project?");
     if (!confirmed) return;
 
     try {
-        await deleteProject(id);
-        await loadProjects();
+      await deleteProject(id);
+      await loadProjects();
     } catch (error) {
-        console.error(error);
-        alert("Failed to delete project");
+      console.error(error);
+      alert("Failed to delete project");
     }
-    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    window.location.reload();
+  }
 
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
-      <h1>DevTrack</h1>
-      <p>Project Collaboration Platform</p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <div>
+          <h1 style={{ marginBottom: 8 }}>DevTrack</h1>
+          <p style={{ marginTop: 0 }}>Project Collaboration Platform</p>
+        </div>
+
+        <div>
+          {username ? (
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <span>Hello, {username}</span>
+              <button onClick={handleLogout}>Logout</button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 12 }}>
+              <Link to="/login">Login</Link>
+              <Link to="/register">Register</Link>
+            </div>
+          )}
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
@@ -107,10 +149,11 @@ export default function ProjectsPage() {
               <h3 style={{ marginTop: 0 }}>{project.name}</h3>
               <p>{project.description || "No description"}</p>
               <p>Tasks: {project.tasks?.length ?? 0}</p>
+
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <Link to={`/projects/${project.id}`}>Open project</Link>
-            <button onClick={() => handleDeleteProject(project.id)}>Delete</button>
-            </div>
+                <Link to={`/projects/${project.id}`}>Open project</Link>
+                <button onClick={() => handleDeleteProject(project.id)}>Delete</button>
+              </div>
             </div>
           ))}
         </div>
