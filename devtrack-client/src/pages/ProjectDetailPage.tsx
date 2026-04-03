@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   createTask,
   deleteTask,
@@ -10,6 +10,7 @@ import type { Project } from "../types";
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const projectId = Number(id);
 
   const [project, setProject] = useState<Project | null>(null);
@@ -17,6 +18,8 @@ export default function ProjectDetailPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [loading, setLoading] = useState(true);
+
+  const username = localStorage.getItem("username");
 
   async function loadProject() {
     try {
@@ -31,9 +34,21 @@ export default function ProjectDetailPage() {
   }
 
   useEffect(() => {
+    if (!username) {
+      navigate("/login");
+      return;
+    }
+
     if (!projectId) return;
     loadProject();
-  }, [projectId]);
+  }, [projectId, username, navigate]);
+
+  if (!username) {
+    return null;
+  }
+
+  if (loading) return <p style={{ padding: 24 }}>Loading...</p>;
+  if (!project) return <p style={{ padding: 24 }}>Project not found.</p>;
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +85,7 @@ export default function ProjectDetailPage() {
       alert("Failed to update task status");
     }
   }
- 
+
   async function handleDeleteTask(taskId: number) {
     const confirmed = window.confirm("Are you sure you want to delete this task?");
     if (!confirmed) return;
@@ -94,9 +109,6 @@ export default function ProjectDetailPage() {
         return { background: "#f3f4f6", color: "#374151" };
     }
   }
-
-  if (loading) return <p style={{ padding: 24 }}>Loading...</p>;
-  if (!project) return <p style={{ padding: 24 }}>Project not found.</p>;
 
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
@@ -187,16 +199,16 @@ export default function ProjectDetailPage() {
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button onClick={() => handleStatusChange(task.id, "Todo")}>
-                    Todo
+                  Todo
                 </button>
                 <button onClick={() => handleStatusChange(task.id, "InProgress")}>
-                    In Progress
+                  In Progress
                 </button>
                 <button onClick={() => handleStatusChange(task.id, "Done")}>
-                    Done
+                  Done
                 </button>
                 <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
-                </div>
+              </div>
             </div>
           ))
         )}

@@ -2,13 +2,16 @@ import type { Project, TaskItem } from "../types";
 
 const API_BASE = "http://localhost:5000/api";
 
-function getAuthHeaders() {
+function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("token");
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-      }
-    : {};
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 export async function register(data: {
@@ -42,13 +45,23 @@ export async function login(data: { email: string; password: string }) {
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const res = await fetch(`${API_BASE}/projects`);
+  const res = await fetch(`${API_BASE}/projects`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
   if (!res.ok) throw new Error("Failed to fetch projects");
   return res.json();
 }
 
 export async function getProject(id: number): Promise<Project> {
-  const res = await fetch(`${API_BASE}/projects/${id}`);
+  const res = await fetch(`${API_BASE}/projects/${id}`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
   if (!res.ok) throw new Error("Failed to fetch project");
   return res.json();
 }
@@ -108,6 +121,9 @@ export async function updateTaskStatus(
 export async function deleteProject(id: number) {
   const res = await fetch(`${API_BASE}/projects/${id}`, {
     method: "DELETE",
+    headers: {
+      ...getAuthHeaders(),
+    },
   });
 
   if (!res.ok) throw new Error("Failed to delete project");

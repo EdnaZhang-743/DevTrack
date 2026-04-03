@@ -26,8 +26,14 @@ export default function ProjectsPage() {
   }
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+  if (!username) {
+    setProjects([]);
+    setLoading(false);
+    return;
+  }
+
+   loadProjects();
+ }, [username]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,7 +80,7 @@ export default function ProjectsPage() {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("email");
-    window.location.reload();
+    navigate("/login");
   }
 
   return (
