@@ -110,17 +110,23 @@ DELETE /api/tasks/{id}
 
 ## How to Run Locally
 ### 1. Clone the repository
+```Bash
 git clone https://github.com/EdnaZhang-743/DevTrack.git
 cd DevTrack
+```
 ### 2. Run the backend
+```Bash
 cd DevTrack.Api
 dotnet ef database update
 dotnet run --urls=http://localhost:5000
+```
 ### 3. Run the frontend
 Open a new terminal:
+```Bash
 cd devtrack-client
 npm install
 npm run dev
+```
 ### 4. Open in browser
 Frontend: http://localhost:5173
 Backend Swagger: http://localhost:5000/swagger
