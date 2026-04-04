@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   createTask,
@@ -19,6 +19,9 @@ export default function ProjectDetailPage() {
   const [priority, setPriority] = useState("Medium");
   const [loading, setLoading] = useState(true);
 
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+
   const username = localStorage.getItem("username");
 
   async function loadProject() {
@@ -28,6 +31,7 @@ export default function ProjectDetailPage() {
     } catch (error) {
       console.error(error);
       alert("Failed to load project");
+      setProject(null);
     } finally {
       setLoading(false);
     }
@@ -39,21 +43,37 @@ export default function ProjectDetailPage() {
       return;
     }
 
-    if (!projectId) return;
+    if (!projectId || Number.isNaN(projectId)) {
+      setLoading(false);
+      return;
+    }
+
     loadProject();
   }, [projectId, username, navigate]);
 
-  if (!username) {
-    return null;
-  }
+  const tasks = project?.tasks ?? [];
 
-  if (loading) {
-    return <div className="page-shell"><div className="empty-state">Loading...</div></div>;
-  }
+  const todoCount = tasks.filter((task) => task.status === "Todo").length;
+  const inProgressCount = tasks.filter(
+    (task) => task.status === "InProgress"
+  ).length;
+  const doneCount = tasks.filter((task) => task.status === "Done").length;
 
-  if (!project) {
-    return <div className="page-shell"><div className="empty-state">Project not found.</div></div>;
-  }
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const matchesStatus =
+        statusFilter === "All" ? true : task.status === statusFilter;
+
+      const keyword = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        keyword === ""
+          ? true
+          : task.title.toLowerCase().includes(keyword) ||
+            (task.description ?? "").toLowerCase().includes(keyword);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [tasks, statusFilter, searchTerm]);
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
@@ -115,11 +135,30 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const todoCount = project.tasks.filter((task) => task.status === "Todo").length;
-  const inProgressCount = project.tasks.filter(
-    (task) => task.status === "InProgress"
-  ).length;
-  const doneCount = project.tasks.filter((task) => task.status === "Done").length;
+  if (!username) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="page-shell">
+        <div className="empty-state">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="page-shell">
+        <div className="section-header" style={{ marginBottom: 16 }}>
+          <Link to="/" className="text-link">
+            ← Back to projects
+          </Link>
+        </div>
+        <div className="empty-state">Project not found.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell">
@@ -138,7 +177,7 @@ export default function ProjectDetailPage() {
         </p>
 
         <div className="meta-row">
-          <span className="meta-badge">Tasks: {project.tasks.length}</span>
+          <span className="meta-badge">Tasks: {tasks.length}</span>
           <span className="meta-badge">Todo: {todoCount}</span>
           <span className="meta-badge">In Progress: {inProgressCount}</span>
           <span className="meta-badge">Done: {doneCount}</span>
@@ -190,11 +229,38 @@ export default function ProjectDetailPage() {
           <h2 className="section-title">Tasks</h2>
         </div>
 
-        {project.tasks.length === 0 ? (
-          <div className="empty-state">No tasks yet.</div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 220px",
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
+          <input
+            className="input"
+            placeholder="Search task title or description"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All statuses</option>
+            <option value="Todo">Todo</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Done">Done</option>
+          </select>
+        </div>
+
+        {filteredTasks.length === 0 ? (
+          <div className="empty-state">No matching tasks.</div>
         ) : (
           <div className="project-grid">
-            {project.tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <article key={task.id} className="project-card">
                 <div className="project-card-body">
                   <h3 className="project-title" style={{ fontSize: 24 }}>
