@@ -38,19 +38,6 @@ The goal of DevTrack is to provide a clean and practical project tracking system
 - JWT Bearer Authentication
 - BCrypt password hashing
 
-## Screenshots
-> Replace the image paths below with your actual screenshot file names after uploading them to your repository.
-### Dashboard
-![Dashboard](./screenshots/dashboard.png)
-### Login Page
-![Login](./screenshots/login.png)
-### Register Page
-![Register](./screenshots/register.png)
-### Project Detail Page
-![Project Detail](./screenshots/project-detail.png)
-### Task Editing and Filtering
-![Task Management](./screenshots/task-management.png)
-
 ## Project Structure
 ```text
 DevTrack/
