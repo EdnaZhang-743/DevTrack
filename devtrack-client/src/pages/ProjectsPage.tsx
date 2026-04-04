@@ -88,6 +88,7 @@ export default function ProjectsPage() {
     () => projects.reduce((sum, project) => sum + project.tasks.length, 0),
     [projects]
   );
+
   const todoCount = useMemo(
     () =>
       projects.reduce(
@@ -97,6 +98,18 @@ export default function ProjectsPage() {
       ),
     [projects]
   );
+
+  const inProgressCount = useMemo(
+    () =>
+      projects.reduce(
+        (sum, project) =>
+          sum +
+          project.tasks.filter((task) => task.status === "InProgress").length,
+        0
+      ),
+    [projects]
+  );
+
   const doneCount = useMemo(
     () =>
       projects.reduce(
@@ -106,6 +119,12 @@ export default function ProjectsPage() {
       ),
     [projects]
   );
+
+  const todoPercent = totalTasks ? (todoCount / totalTasks) * 100 : 0;
+  const inProgressPercent = totalTasks ? (inProgressCount / totalTasks) * 100 : 0;
+  const donePercent = totalTasks ? (doneCount / totalTasks) * 100 : 0;
+
+  const chartMax = Math.max(todoCount, inProgressCount, doneCount, 1);
 
   return (
     <div className="page-shell">
@@ -137,27 +156,98 @@ export default function ProjectsPage() {
       </header>
 
       {username && (
-        <section className="dashboard-grid">
-          <div className="summary-card">
-            <p className="summary-label">Projects</p>
-            <h2>{totalProjects}</h2>
-          </div>
+        <>
+          <section className="dashboard-grid">
+            <div className="summary-card">
+              <p className="summary-label">Projects</p>
+              <h2>{totalProjects}</h2>
+            </div>
 
-          <div className="summary-card">
-            <p className="summary-label">Tasks</p>
-            <h2>{totalTasks}</h2>
-          </div>
+            <div className="summary-card">
+              <p className="summary-label">Tasks</p>
+              <h2>{totalTasks}</h2>
+            </div>
 
-          <div className="summary-card">
-            <p className="summary-label">Todo</p>
-            <h2>{todoCount}</h2>
-          </div>
+            <div className="summary-card">
+              <p className="summary-label">Todo</p>
+              <h2>{todoCount}</h2>
+            </div>
 
-          <div className="summary-card">
-            <p className="summary-label">Done</p>
-            <h2>{doneCount}</h2>
-          </div>
-        </section>
+            <div className="summary-card">
+              <p className="summary-label">Done</p>
+              <h2>{doneCount}</h2>
+            </div>
+          </section>
+
+          <section className="chart-grid">
+            <div className="panel">
+              <h2 className="section-title">Task Status Progress</h2>
+
+              <div className="progress-legend">
+                <span><span className="legend-dot todo-dot"></span>Todo</span>
+                <span><span className="legend-dot progress-dot"></span>In Progress</span>
+                <span><span className="legend-dot done-dot"></span>Done</span>
+              </div>
+
+              <div className="stacked-progress">
+                <div
+                  className="stack-segment todo-segment"
+                  style={{ width: `${todoPercent}%` }}
+                  title={`Todo: ${todoCount}`}
+                />
+                <div
+                  className="stack-segment progress-segment"
+                  style={{ width: `${inProgressPercent}%` }}
+                  title={`In Progress: ${inProgressCount}`}
+                />
+                <div
+                  className="stack-segment done-segment"
+                  style={{ width: `${donePercent}%` }}
+                  title={`Done: ${doneCount}`}
+                />
+              </div>
+
+              <div className="progress-summary-row">
+                <span>Todo: {todoCount}</span>
+                <span>In Progress: {inProgressCount}</span>
+                <span>Done: {doneCount}</span>
+              </div>
+            </div>
+
+            <div className="panel">
+              <h2 className="section-title">Status Distribution</h2>
+
+              <div className="bar-chart">
+                <div className="bar-item">
+                  <div
+                    className="bar todo-bar"
+                    style={{ height: `${(todoCount / chartMax) * 180}px` }}
+                  ></div>
+                  <p className="bar-value">{todoCount}</p>
+                  <p className="bar-label">Todo</p>
+                </div>
+
+                <div className="bar-item">
+                  <div
+                    className="bar progress-bar"
+                    style={{ height: `${(inProgressCount / chartMax) * 180}px` }}
+                  ></div>
+                  <p className="bar-value">{inProgressCount}</p>
+                  <p className="bar-label">In Progress</p>
+                </div>
+
+                <div className="bar-item">
+                  <div
+                    className="bar done-bar"
+                    style={{ height: `${(doneCount / chartMax) * 180}px` }}
+                  ></div>
+                  <p className="bar-value">{doneCount}</p>
+                  <p className="bar-label">Done</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
       )}
 
       <section className="panel">
