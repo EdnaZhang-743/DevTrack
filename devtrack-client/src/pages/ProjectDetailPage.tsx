@@ -47,8 +47,13 @@ export default function ProjectDetailPage() {
     return null;
   }
 
-  if (loading) return <p style={{ padding: 24 }}>Loading...</p>;
-  if (!project) return <p style={{ padding: 24 }}>Project not found.</p>;
+  if (loading) {
+    return <div className="page-shell"><div className="empty-state">Loading...</div></div>;
+  }
+
+  if (!project) {
+    return <div className="page-shell"><div className="empty-state">Project not found.</div></div>;
+  }
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
@@ -110,109 +115,146 @@ export default function ProjectDetailPage() {
     }
   }
 
+  const todoCount = project.tasks.filter((task) => task.status === "Todo").length;
+  const inProgressCount = project.tasks.filter(
+    (task) => task.status === "InProgress"
+  ).length;
+  const doneCount = project.tasks.filter((task) => task.status === "Done").length;
+
   return (
-    <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
-      <Link to="/">← Back to projects</Link>
+    <div className="page-shell">
+      <div className="section-header" style={{ marginBottom: 16 }}>
+        <Link to="/" className="text-link">
+          ← Back to projects
+        </Link>
+      </div>
 
-      <h1>{project.name}</h1>
-      <p>{project.description || "No description"}</p>
+      <section className="panel" style={{ marginBottom: 24 }}>
+        <h1 className="brand-title" style={{ fontSize: 40, marginBottom: 12 }}>
+          {project.name}
+        </h1>
+        <p className="brand-subtitle" style={{ marginBottom: 16 }}>
+          {project.description || "No description"}
+        </p>
 
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #ddd",
-          borderRadius: 8,
-          padding: 16,
-          margin: "24px 0",
-        }}
-      >
-        <h2>Create Task</h2>
+        <div className="meta-row">
+          <span className="meta-badge">Tasks: {project.tasks.length}</span>
+          <span className="meta-badge">Todo: {todoCount}</span>
+          <span className="meta-badge">In Progress: {inProgressCount}</span>
+          <span className="meta-badge">Done: {doneCount}</span>
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginBottom: 24 }}>
+        <h2 className="section-title">Create Task</h2>
+
         <form onSubmit={handleCreateTask}>
-          <div style={{ marginBottom: 12 }}>
+          <div className="form-group">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task title"
-              style={{ width: "100%", padding: 10 }}
+              className="input"
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
+          <div className="form-group">
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Task description"
-              style={{ width: "100%", padding: 10, minHeight: 80 }}
+              className="textarea"
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
+          <div className="form-group">
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              style={{ width: "100%", padding: 10 }}
+              className="input"
             >
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
+              <option value="Low">Low priority</option>
+              <option value="Medium">Medium priority</option>
+              <option value="High">High priority</option>
             </select>
           </div>
 
-          <button type="submit">Create Task</button>
+          <button type="submit" className="primary-btn">
+            Create Task
+          </button>
         </form>
-      </div>
+      </section>
 
-      <div>
-        <h2>Tasks</h2>
+      <section className="projects-section">
+        <div className="section-header">
+          <h2 className="section-title">Tasks</h2>
+        </div>
+
         {project.tasks.length === 0 ? (
-          <p>No tasks yet.</p>
+          <div className="empty-state">No tasks yet.</div>
         ) : (
-          project.tasks.map((task) => (
-            <div
-              key={task.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 16,
-                marginBottom: 12,
-                background: "#fff",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>{task.title}</h3>
-              <p>{task.description || "No description"}</p>
-              <p>Priority: {task.priority}</p>
-              <p>
-                Status:{" "}
-                <span
-                  style={{
-                    ...getStatusStyle(task.status),
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    display: "inline-block",
-                  }}
-                >
-                  {task.status}
-                </span>
-              </p>
+          <div className="project-grid">
+            {project.tasks.map((task) => (
+              <article key={task.id} className="project-card">
+                <div className="project-card-body">
+                  <h3 className="project-title" style={{ fontSize: 24 }}>
+                    {task.title}
+                  </h3>
+                  <p className="project-description">
+                    {task.description || "No description"}
+                  </p>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button onClick={() => handleStatusChange(task.id, "Todo")}>
-                  Todo
-                </button>
-                <button onClick={() => handleStatusChange(task.id, "InProgress")}>
-                  In Progress
-                </button>
-                <button onClick={() => handleStatusChange(task.id, "Done")}>
-                  Done
-                </button>
-                <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
-              </div>
-            </div>
-          ))
+                  <div className="meta-row" style={{ marginBottom: 12 }}>
+                    <span className="meta-badge">Priority: {task.priority}</span>
+                    <span
+                      style={{
+                        ...getStatusStyle(task.status),
+                        padding: "6px 10px",
+                        borderRadius: 999,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        display: "inline-block",
+                      }}
+                    >
+                      {task.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  className="project-card-actions"
+                  style={{ flexWrap: "wrap", gap: 10 }}
+                >
+                  <button
+                    className="secondary-btn"
+                    onClick={() => handleStatusChange(task.id, "Todo")}
+                  >
+                    Todo
+                  </button>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => handleStatusChange(task.id, "InProgress")}
+                  >
+                    In Progress
+                  </button>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => handleStatusChange(task.id, "Done")}
+                  >
+                    Done
+                  </button>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => handleDeleteTask(task.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createProject, deleteProject, getProjects } from "../api/client";
 import type { Project } from "../types";
@@ -26,14 +26,14 @@ export default function ProjectsPage() {
   }
 
   useEffect(() => {
-  if (!username) {
-    setProjects([]);
-    setLoading(false);
-    return;
-  }
+    if (!username) {
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
 
-   loadProjects();
- }, [username]);
+    loadProjects();
+  }, [username]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -83,87 +83,157 @@ export default function ProjectsPage() {
     navigate("/login");
   }
 
+  const totalProjects = projects.length;
+  const totalTasks = useMemo(
+    () => projects.reduce((sum, project) => sum + project.tasks.length, 0),
+    [projects]
+  );
+  const todoCount = useMemo(
+    () =>
+      projects.reduce(
+        (sum, project) =>
+          sum + project.tasks.filter((task) => task.status === "Todo").length,
+        0
+      ),
+    [projects]
+  );
+  const doneCount = useMemo(
+    () =>
+      projects.reduce(
+        (sum, project) =>
+          sum + project.tasks.filter((task) => task.status === "Done").length,
+        0
+      ),
+    [projects]
+  );
+
   return (
-    <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
+    <div className="page-shell">
+      <header className="topbar">
         <div>
-          <h1 style={{ marginBottom: 8 }}>DevTrack</h1>
-          <p style={{ marginTop: 0 }}>Project Collaboration Platform</p>
+          <h1 className="brand-title">DevTrack</h1>
+          <p className="brand-subtitle">Project Collaboration Platform</p>
         </div>
 
         <div>
           {username ? (
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <span>Hello, {username}</span>
-              <button onClick={handleLogout}>Logout</button>
+            <div className="topbar-actions">
+              <span className="welcome-text">Hello, {username}</span>
+              <button className="secondary-btn" onClick={handleLogout}>
+                Logout
+              </button>
             </div>
           ) : (
-            <div style={{ display: "flex", gap: 12 }}>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Register</Link>
+            <div className="topbar-actions">
+              <Link to="/login" className="text-link">
+                Login
+              </Link>
+              <Link to="/register" className="text-link">
+                Register
+              </Link>
             </div>
           )}
         </div>
-      </div>
+      </header>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 12 }}>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Project name"
-            style={{ width: "100%", padding: 10 }}
-          />
-        </div>
+      {username && (
+        <section className="dashboard-grid">
+          <div className="summary-card">
+            <p className="summary-label">Projects</p>
+            <h2>{totalProjects}</h2>
+          </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Project description"
-            style={{ width: "100%", padding: 10, minHeight: 80 }}
-          />
-        </div>
+          <div className="summary-card">
+            <p className="summary-label">Tasks</p>
+            <h2>{totalTasks}</h2>
+          </div>
 
-        <button type="submit">Create Project</button>
-      </form>
+          <div className="summary-card">
+            <p className="summary-label">Todo</p>
+            <h2>{todoCount}</h2>
+          </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : projects.length === 0 ? (
-        <p>No projects yet.</p>
-      ) : (
-        <div>
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 16,
-                marginBottom: 12,
-                background: "#fff",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>{project.name}</h3>
-              <p>{project.description || "No description"}</p>
-              <p>Tasks: {project.tasks?.length ?? 0}</p>
-
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <Link to={`/projects/${project.id}`}>Open project</Link>
-                <button onClick={() => handleDeleteProject(project.id)}>Delete</button>
-              </div>
-            </div>
-          ))}
-        </div>
+          <div className="summary-card">
+            <p className="summary-label">Done</p>
+            <h2>{doneCount}</h2>
+          </div>
+        </section>
       )}
+
+      <section className="panel">
+        <h2 className="section-title">Create Project</h2>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Project name"
+              className="input"
+            />
+          </div>
+
+          <div className="form-group">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Project description"
+              className="textarea"
+            />
+          </div>
+
+          <button type="submit" className="primary-btn">
+            Create Project
+          </button>
+        </form>
+      </section>
+
+      <section className="projects-section">
+        <div className="section-header">
+          <h2 className="section-title">Your Projects</h2>
+        </div>
+
+        {loading ? (
+          <div className="empty-state">Loading...</div>
+        ) : !username ? (
+          <div className="empty-state">
+            Please login to view and manage your projects.
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="empty-state">No projects yet.</div>
+        ) : (
+          <div className="project-grid">
+            {projects.map((project) => (
+              <article key={project.id} className="project-card">
+                <div className="project-card-body">
+                  <h3 className="project-title">{project.name}</h3>
+                  <p className="project-description">
+                    {project.description || "No description"}
+                  </p>
+
+                  <div className="meta-row">
+                    <span className="meta-badge">
+                      Tasks: {project.tasks?.length ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="project-card-actions">
+                  <Link to={`/projects/${project.id}`} className="text-link">
+                    Open project
+                  </Link>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => handleDeleteProject(project.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
