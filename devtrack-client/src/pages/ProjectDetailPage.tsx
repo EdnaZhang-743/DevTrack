@@ -4,6 +4,8 @@ import {
   createTask,
   deleteTask,
   getProject,
+  updateProject,
+  updateTask,
   updateTaskStatus,
 } from "../api/client";
 import type { Project } from "../types";
@@ -21,13 +23,22 @@ export default function ProjectDetailPage() {
 
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
 
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskPriority, setEditTaskPriority] = useState("Medium");
   const username = localStorage.getItem("username");
 
   async function loadProject() {
     try {
       const data = await getProject(projectId);
       setProject(data);
+      setProjectName(data.name);
+      setProjectDescription(data.description ?? "");
     } catch (error) {
       console.error(error);
       alert("Failed to load project");
@@ -124,6 +135,67 @@ export default function ProjectDetailPage() {
     }
   }
 
+async function handleUpdateProject(e: React.FormEvent) {
+  e.preventDefault();
+
+  if (!project) return;
+
+  if (!projectName.trim()) {
+    alert("Project name is required");
+    return;
+  }
+
+  try {
+    await updateProject(project.id, {
+      name: projectName.trim(),
+      description: projectDescription.trim(),
+    });
+    setEditingProject(false);
+    await loadProject();
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update project");
+  }
+}
+
+  function startEditTask(task: {
+    id: number;
+    title: string;
+    description?: string | null;
+    priority: string;
+  }) {
+    setEditingTaskId(task.id);
+    setEditTaskTitle(task.title);
+    setEditTaskDescription(task.description ?? "");
+    setEditTaskPriority(task.priority);
+  }
+
+  async function handleUpdateTask(e: React.FormEvent, taskId: number) {
+    e.preventDefault();
+
+    if (!editTaskTitle.trim()) {
+      alert("Task title is required");
+      return;
+    }
+
+    try {
+      await updateTask(taskId, {
+        title: editTaskTitle.trim(),
+        description: editTaskDescription.trim(),
+        priority: editTaskPriority,
+      });
+
+      setEditingTaskId(null);
+      setEditTaskTitle("");
+      setEditTaskDescription("");
+      setEditTaskPriority("Medium");
+      await loadProject();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update task");
+    }
+  }
+
   function getStatusStyle(status: string) {
     switch (status) {
       case "Done":
@@ -169,19 +241,79 @@ export default function ProjectDetailPage() {
       </div>
 
       <section className="panel" style={{ marginBottom: 24 }}>
-        <h1 className="brand-title" style={{ fontSize: 40, marginBottom: 12 }}>
-          {project.name}
-        </h1>
-        <p className="brand-subtitle" style={{ marginBottom: 16 }}>
-          {project.description || "No description"}
-        </p>
+        {editingProject ? (
+          <form onSubmit={handleUpdateProject}>
+            <div className="form-group">
+              <input
+                className="input"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Project name"
+              />
+            </div>
 
-        <div className="meta-row">
-          <span className="meta-badge">Tasks: {tasks.length}</span>
-          <span className="meta-badge">Todo: {todoCount}</span>
-          <span className="meta-badge">In Progress: {inProgressCount}</span>
-          <span className="meta-badge">Done: {doneCount}</span>
-        </div>
+            <div className="form-group">
+              <textarea
+                className="textarea"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                placeholder="Project description"
+              />
+            </div>
+
+            <div className="project-card-actions" style={{ justifyContent: "flex-start" }}>
+              <button type="submit" className="primary-btn">
+                Save Project
+              </button>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                  setEditingProject(false);
+                  setProjectName(project.name);
+                  setProjectDescription(project.description ?? "");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "flex-start",
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                <h1 className="brand-title" style={{ fontSize: 40, marginBottom: 12 }}>
+                  {project.name}
+                </h1>
+                <p className="brand-subtitle" style={{ marginBottom: 16 }}>
+                  {project.description || "No description"}
+                </p>
+              </div>
+
+              <button
+                className="secondary-btn"
+                onClick={() => setEditingProject(true)}
+              >
+                Edit Project
+              </button>
+            </div>
+
+            <div className="meta-row">
+              <span className="meta-badge">Tasks: {tasks.length}</span>
+              <span className="meta-badge">Todo: {todoCount}</span>
+              <span className="meta-badge">In Progress: {inProgressCount}</span>
+              <span className="meta-badge">Done: {doneCount}</span>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="panel" style={{ marginBottom: 24 }}>
@@ -262,61 +394,126 @@ export default function ProjectDetailPage() {
           <div className="project-grid">
             {filteredTasks.map((task) => (
               <article key={task.id} className="project-card">
-                <div className="project-card-body">
-                  <h3 className="project-title" style={{ fontSize: 24 }}>
-                    {task.title}
-                  </h3>
-                  <p className="project-description">
-                    {task.description || "No description"}
-                  </p>
+  {editingTaskId === task.id ? (
+    <form onSubmit={(e) => handleUpdateTask(e, task.id)}>
+      <div className="form-group">
+        <input
+          className="input"
+          value={editTaskTitle}
+          onChange={(e) => setEditTaskTitle(e.target.value)}
+          placeholder="Task title"
+        />
+      </div>
 
-                  <div className="meta-row" style={{ marginBottom: 12 }}>
-                    <span className="meta-badge">Priority: {task.priority}</span>
-                    <span
-                      style={{
-                        ...getStatusStyle(task.status),
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        display: "inline-block",
-                      }}
-                    >
-                      {task.status}
-                    </span>
-                  </div>
-                </div>
+      <div className="form-group">
+        <textarea
+          className="textarea"
+          value={editTaskDescription}
+          onChange={(e) => setEditTaskDescription(e.target.value)}
+          placeholder="Task description"
+        />
+      </div>
 
-                <div
-                  className="project-card-actions"
-                  style={{ flexWrap: "wrap", gap: 10 }}
-                >
-                  <button
-                    className="secondary-btn"
-                    onClick={() => handleStatusChange(task.id, "Todo")}
-                  >
-                    Todo
-                  </button>
-                  <button
-                    className="secondary-btn"
-                    onClick={() => handleStatusChange(task.id, "InProgress")}
-                  >
-                    In Progress
-                  </button>
-                  <button
-                    className="secondary-btn"
-                    onClick={() => handleStatusChange(task.id, "Done")}
-                  >
-                    Done
-                  </button>
-                  <button
-                    className="secondary-btn"
-                    onClick={() => handleDeleteTask(task.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
+      <div className="form-group">
+        <select
+          className="input"
+          value={editTaskPriority}
+          onChange={(e) => setEditTaskPriority(e.target.value)}
+        >
+          <option value="Low">Low priority</option>
+          <option value="Medium">Medium priority</option>
+          <option value="High">High priority</option>
+        </select>
+      </div>
+
+      <div className="project-card-actions" style={{ flexWrap: "wrap", gap: 10 }}>
+        <button type="submit" className="primary-btn">
+          Save Task
+        </button>
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => {
+            setEditingTaskId(null);
+            setEditTaskTitle("");
+            setEditTaskDescription("");
+            setEditTaskPriority("Medium");
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  ) : (
+    <>
+      <div className="task-card-topbar">
+        <div className="task-card-topbar-actions">
+          <button
+            className="mini-btn mini-btn-edit"
+            onClick={() => startEditTask(task)}
+          >
+            Edit
+          </button>
+          <button
+            className="mini-btn mini-btn-delete"
+            onClick={() => handleDeleteTask(task.id)}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div className="project-card-body">
+        <h3 className="project-title" style={{ fontSize: 24 }}>
+          {task.title}
+        </h3>
+        <p className="project-description">
+          {task.description || "No description"}
+        </p>
+
+        <div className="meta-row" style={{ marginBottom: 12 }}>
+          <span className="meta-badge">Priority: {task.priority}</span>
+          <span
+            style={{
+              ...getStatusStyle(task.status),
+              padding: "6px 10px",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 600,
+              display: "inline-block",
+            }}
+          >
+            {task.status}
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="project-card-actions"
+        style={{ flexWrap: "wrap", gap: 10 }}
+      >
+        <button
+          className="secondary-btn"
+          onClick={() => handleStatusChange(task.id, "Todo")}
+        >
+          Todo
+        </button>
+        <button
+          className="secondary-btn"
+          onClick={() => handleStatusChange(task.id, "InProgress")}
+        >
+          In Progress
+        </button>
+        <button
+          className="secondary-btn"
+          onClick={() => handleStatusChange(task.id, "Done")}
+        >
+          Done
+        </button>
+      </div>
+    </>
+  )}
+</article>
             ))}
           </div>
         )}

@@ -136,3 +136,37 @@ export async function deleteTask(id: number) {
 
   if (!res.ok) throw new Error("Failed to delete task");
 }
+
+export async function updateProject(
+  id: number,
+  data: { name: string; description?: string }
+) {
+  const res = await fetch(`${API_BASE}/projects/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to update project");
+  return res.json();
+}
+
+export async function updateTask(
+  id: number,
+  data: { title: string; description?: string; priority: string }
+): Promise<TaskItem> {
+  const res = await fetch(`${API_BASE}/tasks/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}

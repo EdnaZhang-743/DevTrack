@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using DevTrack.Api.Data;
 using DevTrack.Api.DTOs.Projects;
+using DevTrack.Api.DTOs.Tasks;
 using DevTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -102,4 +103,28 @@ public class ProjectsController : ControllerBase
 
         return NoContent();
     }
+
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Project>> UpdateProject(int id, UpdateProjectDto dto)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id && p.OwnerId == currentUserId.Value);
+
+        if (project == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest("Project name is required.");
+
+        project.Name = dto.Name.Trim();
+        project.Description = dto.Description?.Trim();
+
+        await _context.SaveChangesAsync();
+
+        return Ok(project);
+    }
 }
+

@@ -1,8 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using DevTrack.Api.Data;
 using DevTrack.Api.DTOs.Tasks;
 using DevTrack.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DevTrack.Api.Controllers;
 
@@ -15,6 +18,16 @@ public class TasksController : ControllerBase
     public TasksController(AppDbContext context)
     {
         _context = context;
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                        ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim == null) return null;
+
+        return int.Parse(userIdClaim);
     }
 
     [HttpPost]
@@ -51,6 +64,31 @@ public class TasksController : ControllerBase
             return NotFound();
 
         taskItem.Status = dto.Status;
+        await _context.SaveChangesAsync();
+
+        return Ok(taskItem);
+    }
+
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TaskItem>> UpdateTask(int id, UpdateTaskDto dto)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        var taskItem = await _context.Tasks
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id && t.Project!.OwnerId == currentUserId.Value);
+
+        if (taskItem == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(dto.Title))
+            return BadRequest("Task title is required.");
+
+        taskItem.Title = dto.Title.Trim();
+        taskItem.Description = dto.Description?.Trim();
+        taskItem.Priority = dto.Priority;
+
         await _context.SaveChangesAsync();
 
         return Ok(taskItem);

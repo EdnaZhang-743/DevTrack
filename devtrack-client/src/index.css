@@ -385,3 +385,37 @@ select {
     height: 220px;
   }
 }
+
+.task-card-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.task-card-topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mini-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mini-btn-edit {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.mini-btn-delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.mini-btn:hover {
+  opacity: 0.92;
+}
